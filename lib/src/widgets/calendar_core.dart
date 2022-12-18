@@ -92,13 +92,7 @@ class CalendarCore extends StatelessWidget {
           },
           dayBuilder: (context, day) {
             DateTime baseDay;
-            final previousFocusedDay = focusedDay;
-            if (previousFocusedDay == null || previousIndex == null) {
-              baseDay = _getBaseDay(calendarFormat, index);
-            } else {
-              baseDay =
-                  _getFocusedDay(calendarFormat, previousFocusedDay, index);
-            }
+            baseDay = _getBaseDay(calendarFormat, index);
 
             return SizedBox(
               height: constrainedRowHeight ?? rowHeight,
@@ -117,12 +111,7 @@ class CalendarCore extends StatelessWidget {
       },
       onPageChanged: (index) {
         DateTime baseDay;
-        final previousFocusedDay = focusedDay;
-        if (previousFocusedDay == null || previousIndex == null) {
-          baseDay = _getBaseDay(calendarFormat, index);
-        } else {
-          baseDay = _getFocusedDay(calendarFormat, previousFocusedDay, index);
-        }
+        baseDay = _getBaseDay(calendarFormat, index);
 
         return onPageChanged(index, baseDay);
       },
@@ -149,44 +138,29 @@ class CalendarCore extends StatelessWidget {
     return yearDif * 12 + monthDif;
   }
 
-  int _getWeekCount(DateTime first, DateTime last) {
-    return last.difference(_firstDayOfWeek(first)).inDays ~/ 7;
+  int _getWeekCount(DateTime _first, DateTime last) {
+    DateTime first;
+    // calling _firstDayOfWeek with minDateTime will exceed DateTime's supported
+    // minimum value
+    if (_first == minDateTime) {
+      first = _firstDayOfWeek(_first.add(const Duration(days: 7)));
+    } else {
+      first = _firstDayOfWeek(_first);
+    }
+
+    const secondsInYear = 1000 * 60 * 60 * 24;
+    final firstInDays = first.millisecondsSinceEpoch ~/ secondsInYear;
+    final lastInDays = last.millisecondsSinceEpoch ~/ secondsInYear;
+
+    if (_first == minDateTime) {
+      return (lastInDays - firstInDays) ~/ 7 + 1;
+    } else {
+      return (lastInDays - firstInDays) ~/ 7;
+    }
   }
 
   int _getTwoWeekCount(DateTime first, DateTime last) {
-    return last.difference(_firstDayOfWeek(first)).inDays ~/ 14;
-  }
-
-  DateTime _getFocusedDay(
-      CalendarFormat format, DateTime prevFocusedDay, int pageIndex) {
-    if (pageIndex == previousIndex) {
-      return prevFocusedDay;
-    }
-
-    final pageDif = pageIndex - previousIndex!;
-    DateTime day;
-
-    switch (format) {
-      case CalendarFormat.month:
-        day = DateTime.utc(prevFocusedDay.year, prevFocusedDay.month + pageDif);
-        break;
-      case CalendarFormat.twoWeeks:
-        day = DateTime.utc(prevFocusedDay.year, prevFocusedDay.month,
-            prevFocusedDay.day + pageDif * 14);
-        break;
-      case CalendarFormat.week:
-        day = DateTime.utc(prevFocusedDay.year, prevFocusedDay.month,
-            prevFocusedDay.day + pageDif * 7);
-        break;
-    }
-
-    if (day.isBefore(firstDay)) {
-      day = firstDay;
-    } else if (day.isAfter(lastDay)) {
-      day = lastDay;
-    }
-
-    return day;
+    return _getWeekCount(first, last) ~/ 2;
   }
 
   DateTime _getBaseDay(CalendarFormat format, int pageIndex) {

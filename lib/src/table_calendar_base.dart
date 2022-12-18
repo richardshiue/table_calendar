@@ -8,8 +8,8 @@ import 'shared/utils.dart';
 import 'widgets/calendar_core.dart';
 
 class TableCalendarBase extends StatefulWidget {
-  final DateTime firstDay;
-  final DateTime lastDay;
+  final DateTime? firstDay;
+  final DateTime? lastDay;
   final DateTime focusedDay;
   final CalendarFormat calendarFormat;
   final DayBuilder? dowBuilder;
@@ -39,8 +39,8 @@ class TableCalendarBase extends StatefulWidget {
 
   TableCalendarBase({
     Key? key,
-    required this.firstDay,
-    required this.lastDay,
+    this.firstDay,
+    this.lastDay,
     required this.focusedDay,
     this.calendarFormat = CalendarFormat.month,
     this.dowBuilder,
@@ -75,8 +75,12 @@ class TableCalendarBase extends StatefulWidget {
     this.onPageChanged,
     this.onCalendarCreated,
   })  : assert(!dowVisible || (dowHeight != null && dowBuilder != null)),
-        assert(isSameDay(focusedDay, firstDay) || focusedDay.isAfter(firstDay)),
-        assert(isSameDay(focusedDay, lastDay) || focusedDay.isBefore(lastDay)),
+        assert(firstDay == null ||
+            isSameDay(focusedDay, firstDay) ||
+            focusedDay.isAfter(firstDay)),
+        assert(lastDay == null ||
+            isSameDay(focusedDay, lastDay) ||
+            focusedDay.isBefore(lastDay)),
         super(key: key);
 
   @override
@@ -211,8 +215,8 @@ class _TableCalendarBaseState extends State<TableCalendarBase> {
               scrollPhysics: _canScrollHorizontally
                   ? PageScrollPhysics()
                   : NeverScrollableScrollPhysics(),
-              firstDay: widget.firstDay,
-              lastDay: widget.lastDay,
+              firstDay: widget.firstDay ?? minDateTime,
+              lastDay: widget.lastDay ?? maxDateTime,
               startingDayOfWeek: widget.startingDayOfWeek,
               calendarFormat: widget.calendarFormat,
               previousIndex: _previousIndex,
@@ -265,7 +269,10 @@ class _TableCalendarBaseState extends State<TableCalendarBase> {
   }
 
   int _calculateFocusedPage(
-      CalendarFormat format, DateTime startDay, DateTime focusedDay) {
+      CalendarFormat format, DateTime? _startDay, DateTime? _focusedDay) {
+    final startDay = _startDay ?? minDateTime;
+    final focusedDay = _focusedDay ?? maxDateTime;
+
     switch (format) {
       case CalendarFormat.month:
         return _getMonthCount(startDay, focusedDay);
@@ -285,12 +292,28 @@ class _TableCalendarBaseState extends State<TableCalendarBase> {
     return yearDif * 12 + monthDif;
   }
 
-  int _getWeekCount(DateTime first, DateTime last) {
-    return last.difference(_firstDayOfWeek(first)).inDays ~/ 7;
+  int _getWeekCount(DateTime _first, DateTime last) {
+    DateTime first;
+    if (_first == minDateTime) {
+      first = _firstDayOfWeek(_first.add(const Duration(days: 7)));
+    } else {
+      first = _firstDayOfWeek(_first);
+    }
+
+    const secondsInYear = 1000 * 60 * 60 * 24;
+
+    final firstInDays = first.millisecondsSinceEpoch ~/ secondsInYear;
+    final lastInDays = last.millisecondsSinceEpoch ~/ secondsInYear;
+
+    if (_first == minDateTime) {
+      return (lastInDays - firstInDays) ~/ 7 + 1;
+    } else {
+      return (lastInDays - firstInDays) ~/ 7;
+    }
   }
 
   int _getTwoWeekCount(DateTime first, DateTime last) {
-    return last.difference(_firstDayOfWeek(first)).inDays ~/ 14;
+    return _getWeekCount(first, last) ~/ 2;
   }
 
   int _getRowCount(CalendarFormat format, DateTime focusedDay) {

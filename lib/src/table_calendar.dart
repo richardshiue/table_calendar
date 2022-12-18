@@ -48,13 +48,13 @@ class TableCalendar<T> extends StatefulWidget {
   /// Blocks swiping to days before it.
   ///
   /// Days before it will use `disabledStyle` and trigger `onDisabledDayTapped` callback.
-  final DateTime firstDay;
+  final DateTime? firstDay;
 
   /// The last active day of `TableCalendar`.
   /// Blocks swiping to days after it.
   ///
   /// Days after it will use `disabledStyle` and trigger `onDisabledDayTapped` callback.
-  final DateTime lastDay;
+  final DateTime? lastDay;
 
   /// DateTime that will be treated as today. Defaults to `DateTime.now()`.
   ///
@@ -208,8 +208,8 @@ class TableCalendar<T> extends StatefulWidget {
   TableCalendar({
     Key? key,
     required DateTime focusedDay,
-    required DateTime firstDay,
-    required DateTime lastDay,
+    DateTime? firstDay,
+    DateTime? lastDay,
     DateTime? currentDay,
     this.locale,
     this.rangeStartDay,
@@ -267,8 +267,8 @@ class TableCalendar<T> extends StatefulWidget {
                 (day) => day >= DateTime.monday && day <= DateTime.sunday)
             : true),
         focusedDay = normalizeDate(focusedDay),
-        firstDay = normalizeDate(firstDay),
-        lastDay = normalizeDate(lastDay),
+        firstDay = firstDay == null ? null : normalizeDate(firstDay),
+        lastDay = lastDay == null ? null : normalizeDate(lastDay),
         currentDay = currentDay ?? DateTime.now(),
         super(key: key);
 
@@ -733,8 +733,8 @@ class _TableCalendarState<T> extends State<TableCalendar<T>> {
   }
 
   bool _isDayDisabled(DateTime day) {
-    return day.isBefore(widget.firstDay) ||
-        day.isAfter(widget.lastDay) ||
+    return widget.firstDay != null && day.isBefore(widget.firstDay!) ||
+        widget.lastDay != null && day.isAfter(widget.lastDay!) ||
         !_isDayAvailable(day);
   }
 

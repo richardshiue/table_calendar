@@ -52,3 +52,11 @@ bool isSameDay(DateTime? a, DateTime? b) {
 
   return a.year == b.year && a.month == b.month && a.day == b.day;
 }
+
+/// Smallest time value that a DateTime can represent, which is 100,000,000 days
+/// before epoch
+final DateTime minDateTime = DateTime.utc(-271821, 04, 20);
+
+/// Largest time value that a DateTime can represent, which is 100,000,000 days
+/// after epoch
+final DateTime maxDateTime = DateTime.utc(275760, 09, 13);
